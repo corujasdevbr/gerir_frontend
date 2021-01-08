@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {Container, Card, Form, Table, Button, InputGroup} from 'react-bootstrap'
 const Tarefas = () => {
+
     const [id, setId] = useState(0);
     const [titulo, setTitulo] = useState('');
     const [descricao, setDescricao] = useState('');
@@ -15,11 +16,47 @@ const Tarefas = () => {
 
     const listarTarefas = () => {
         //Por padrão no fetch é o GET
-        fetch('http://localhost:5000/api/tarefa')
-            .then(response => response.json)
+        fetch('http://localhost:5000/api/tarefa',{
+            method : 'Get',
+            headers : {
+                'authorization' : 'Bearer ' + localStorage.getItem('token-gerir')
+            }
+        })
+            .then(response => response.json())
             .then(data => {
                 setTarefas(data.data);
             })
+    }
+
+    const salvar =(event) => {
+        event.preventDefault();
+
+        //Crio o objeto tarefa
+        const tarefa = {
+            titulo : titulo,
+            descricao : descricao,
+            categoria : categoria,
+            dataentrega : dataEntrega,
+            status : status
+        }
+
+        const method = (id === 0 ? 'POST' : 'PUT');
+        const urlRequest = (id === 0 ? 'http://localhost:5000/api/tarefa' : 'http://localhost:5000/api/tarefa/' + id);
+
+        fetch(urlRequest, {
+            method : method,
+            body : JSON.stringify(tarefa),
+            headers : {
+                'authorization' : 'Bearer ' + localStorage.getItem('token-gerir'),
+                'content-type' : 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(dados => {
+            alert('Tarefa salva');
+
+            listarTarefas();
+        })
     }
 
     return (
@@ -27,7 +64,7 @@ const Tarefas = () => {
             <Container>
                 <Card>
                     <Card.Body>
-                        <Form>
+                        <Form onSubmit={ event => salvar(event)}>
                             <Form.Group controlId="formBasicTitulo">
                                 <Form.Label>Título</Form.Label>
                                 <Form.Control type="text" value={titulo} onChange={event => setTitulo(event.target.value)} placeholder="Informe o título" required />
@@ -72,7 +109,24 @@ const Tarefas = () => {
                         </tr>
                     </thead>
                     <tbody>
-                    
+                        {
+                            tarefas.map((item, index) => {
+                                return (
+                                    <tr>
+                                        <td>{item.titulo}</td>
+                                        <td>{item.descricao}</td>
+                                        <td>{item.categoria}</td>
+                                        <td>{item.dataentrega}</td>
+                                        <td>{item.status ? 'Feito' : 'Para Fazer'}</td>
+                                        <td>
+                                            <Button variant="warning" value={item.id}>Editar</Button>
+                                            <Button variant="danger"  value={item.id}>Excluir </Button>
+                                            <Button variant="primary" value={item.id}>Alterar Status</Button>
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        }
                     </tbody>
                 </Table>
             </Container>               
