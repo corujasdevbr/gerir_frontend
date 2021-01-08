@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {Container, Card, Form, Table, Button, InputGroup} from 'react-bootstrap'
+import moment from 'moment';
+
 const Tarefas = () => {
 
     const [id, setId] = useState(0);
@@ -31,6 +33,8 @@ const Tarefas = () => {
     const salvar =(event) => {
         event.preventDefault();
 
+        console.log('status ' + status);
+
         //Crio o objeto tarefa
         const tarefa = {
             titulo : titulo,
@@ -56,8 +60,77 @@ const Tarefas = () => {
             alert('Tarefa salva');
 
             listarTarefas();
+
+            limparCampos();
         })
     }
+
+    const editar =(event) => {
+        event.preventDefault();
+
+        fetch('http://localhost:5000/api/tarefa/' + event.target.value,{
+            method : 'GET',
+            headers : {
+                'authorization' : 'Bearer ' + localStorage.getItem('token-gerir')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            setId(data.id);
+            setTitulo(data.titulo);
+            setDescricao(data.descricao);
+            setCategoria(data.categoria);
+            setDataEntrega(data.dataentrega.substring(0,10));
+            setStatus(data.status);
+        })
+        .catch(error => {
+            console.error(error);
+        })
+    }
+
+    const excluir = (event) => {
+
+        if(window.confirm("Deseja realmente excuir a tarefa?")){
+            fetch('http://localhost:5000/api/tarefa/' + event.target.value,{
+                method : 'Delete',
+                headers : {
+                    'authorization' : 'Bearer ' + localStorage.getItem('token-gerir')
+                }
+            })
+            .then(() => {
+                alert('Tarefa excluída!!!');
+
+                listarTarefas();
+            })
+        }
+    }
+
+    const alterarStatus = (event) => {
+        if(window.confirm("Deseja realmente alterar o status da tarefa?")){
+            fetch('http://localhost:5000/api/tarefa/status/' + event.target.value,{
+                method : 'Put',
+                headers : {
+                    'authorization' : 'Bearer ' + localStorage.getItem('token-gerir')
+                }
+            })
+            .then(() => {
+                alert('Tarefa alterada!!!');
+
+                listarTarefas();
+            })
+        }
+    }
+
+    const limparCampos = () => {
+        setId(0);
+        setTitulo('');
+        setDescricao('');
+        setCategoria('');
+        setDataEntrega('');
+        setStatus(false);
+    }
+
+
 
     return (
         <div>
@@ -85,12 +158,6 @@ const Tarefas = () => {
                                 <Form.Control type="date" value={dataEntrega} onChange={event => setDataEntrega(event.target.value)} placeholder="Informe a data de entrega" required />
                             </Form.Group>
 
-                            <Form.Group controlId="formBasicStatus">
-                                <Form.Label>Status</Form.Label>
-                                <InputGroup.Prepend>
-                                    <InputGroup.Checkbox value={status} onChange={event => setStatus(event.target.value)} aria-label="Checkbox for following text input" />
-                                </InputGroup.Prepend>
-                            </Form.Group>
                             
                             <Button type="submit">Salvar</Button>
                         </Form>
@@ -119,9 +186,9 @@ const Tarefas = () => {
                                         <td>{item.dataentrega}</td>
                                         <td>{item.status ? 'Feito' : 'Para Fazer'}</td>
                                         <td>
-                                            <Button variant="warning" value={item.id}>Editar</Button>
-                                            <Button variant="danger"  value={item.id}>Excluir </Button>
-                                            <Button variant="primary" value={item.id}>Alterar Status</Button>
+                                            <Button variant="warning" value={item.id} onClick={event => editar(event)}>Editar</Button>
+                                            <Button variant="danger"  value={item.id} onClick={event => excluir(event)}>Excluir </Button>
+                                            <Button variant="primary" value={item.id} onClick={event => alterarStatus(event)}>Alterar Status</Button>
                                         </td>
                                     </tr>
                                 )
